@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Grades</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      padding: 40px;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #ddd;
+      cursor: pointer;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+    .delete-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Student Grades & Percentages</h1>
+
+  <p>
+    Student name:
+    <input id="studentName" placeholder="Alice" />
+  </p>
+  <p>
+    Grades (comma-separated):
+    <input id="studentGrades" placeholder="8.5, 9, 10" />
+  </p>
+  <p>
+    Out of (e.g. 10, 12):
+    <input id="maxGrade" placeholder="10" />
+  </p>
+
+  <button onclick="addStudent()">Add Student</button>
+  <div class="error" id="errorMsg"></div>
+
+  <table id="gradesTable">
+    <thead>
+      <tr>
+        <th onclick="sortByName()">Name ⬍</th>
+        <th>Grades</th>
+        <th>Average</th>
+        <th>%</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let students = [];
+    let sortDirectionName = true;
+    let sortDirectionAverage = true;
+
+    function quickSort(arr, key, ascending = true) {
+      if (arr.length <= 1) return arr;
+      const pivot = arr[arr.length - 1];
+      const left = [], right = [];
+
+      for (let i = 0; i < arr.length - 1; i++) {
+        const a = key(arr[i]);
+        const b = key(pivot);
+        if ((ascending && a < b) || (!ascending && a > b)) {
+          left.push(arr[i]);
+        } else {
+          right.push(arr[i]);
+        }
+      }
+
+      return [...quickSort(left, key, ascending), pivot, ...quickSort(right, key, ascending)];
+    }
+
+    function addStudent() {
+      const name = document.getElementById("studentName").value.trim();
+      const gradesInput = document.getElementById("studentGrades").value.trim();
+      const maxGrade = parseFloat(document.getElementById("maxGrade").value.trim());
+      const errorDiv = document.getElementById("errorMsg");
+
+      if (!name || !gradesInput || isNaN(maxGrade) || maxGrade <= 0) {
+        errorDiv.textContent = "❌ Please fill in all fields correctly.";
+        return;
+      }
+
+      const gradeList = gradesInput.split(",").map(s => s.trim());
+      const grades = [];
+
+      for (let val of gradeList) {
+        const num = parseFloat(val);
+        if (isNaN(num)) {
+          errorDiv.textContent = "❌ All grades must be valid numbers.";
+          return;
+        }
+        grades.push(num);
+      }
+
+      const average = grades.reduce((a, b) => a + b, 0) / grades.length;
+      const percentage = (average / maxGrade * 100).toFixed(1);
+
+      students.push({
+        name,
+        grades,
+        average: parseFloat(average.toFixed(2)),
+        percent: parseFloat(percentage)
+      });
+
+      students = quickSort(students, s => s.name.toLowerCase(), sortDirectionName);
+      renderTable();
+
+      document.getElementById("studentName").value = "";
+      document.getElementById("studentGrades").value = "";
+      document.getElementById("maxGrade").value = "";
+      errorDiv.textContent = "";
+    }
+
+    function deleteStudent(index) {
+      students.splice(index, 1);
+      renderTable();
+    }
+
+    function sortByName() {
+      sortDirectionName = !sortDirectionName;
+      students = quickSort(students, s => s.name.toLowerCase(), sortDirectionName);
+      renderTable();
+    }
+
+    function sortByAverage() {
+      sortDirectionAverage = !sortDirectionAverage;
+      students = quickSort(students, s => s.average, sortDirectionAverage);
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector("#gradesTable tbody");
+      tbody.innerHTML = "";
+
+      students.forEach((student, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${student.name}</td>
+          <td>${student.grades.join(", ")}</td>
+          <td><b>${student.average}</b></td>
+          <td>${student.percent}%</td>
+          <td><button class="delete-btn" onclick="deleteStudent(${index})">Delete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
